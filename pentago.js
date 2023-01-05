@@ -118,8 +118,9 @@ function flattenBoard() {
 function flattenBoardForGRN() {
     var flat = [];
     var next;
-    for (var quad = 0; quad < 3; quad += 2) {
-        for (var row = 0; row < 3; row++) {
+    const quads = [2, 0]
+    for (const quad of quads) {
+        for (var row = 2; row >= 0; row--) {
             for (col = 0; col < 6; col++) {
                 if (col < 3) {
                     next = gameBoard[quad][row][col];
@@ -244,6 +245,8 @@ function getEngineMove() {
     )
     .then((response) => response.json())
     .then((data) => console.log(data));
+
+    console.log(grn)
 }
 
 function pieceClick(target, quad, row, col) {

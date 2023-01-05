@@ -115,35 +115,49 @@ function flattenBoard() {
     return flat;
 }
 
+function flattenBoardForGRN() {
+    var flat = [];
+    var next;
+    for (var quad = 0; quad < 3; quad += 2) {
+        for (var row = 0; row < 3; row++) {
+            for (col = 0; col < 6; col++) {
+                if (col < 3) {
+                    next = gameBoard[quad][row][col];
+                } else {
+                    next = gameBoard[quad+1][row][col-3];
+                }
+                flat.push(next);
+            }
+        }
+    }
+    return flat;
+}
 
 function createGrn() {
-    function emptyCountString(emptyCount) {
-        var ecs = ""
-
-        if (emptyCount % 6 != 0) {
-            ecs += (emptyCount % 6).toString()
-        }
-
-        const fullRows = Math.floor(emptyCount / 6)
-
-        for (var i = 0; i < fullRows; i++) {
-            ecs += "6"
-        }
-
-        return ecs
-    }
-
-    const flat = flattenBoard()
+    const flat = flattenBoardForGRN()
     var grn = ""
 
     var emptyCount = 0
+    var rowCount = 0
 
     for (var i = 0; i < 36; i++) {
+        rowCount++
+
         if (flat[i] == 0) {
             emptyCount++
+
+            if (emptyCount == 6) {
+                grn += "6"
+                emptyCount = 0
+            } else if (rowCount == 6) {
+                grn += emptyCount.toString()
+                emptyCount = 0
+            }
         } else {
-            grn += emptyCountString(emptyCount)
-            emptyCount = 0
+            if (emptyCount != 0) {
+                grn += emptyCount.toString()
+                emptyCount = 0
+            }
 
             if (flat[i] == 1) {
                 grn += "w"
@@ -151,10 +165,14 @@ function createGrn() {
                 grn += "b"
             }
         }
+
+        if (rowCount == 6) {
+            rowCount = 0
+        }
     }
 
     if (emptyCount != 0) {
-        grn += emptyCountString(emptyCount)
+        grn += emptyCount.toString()
     }
 
     return grn
@@ -213,16 +231,19 @@ function turnPhase() {
 }
 
 function getEngineMove() {
-    const http = new XMLHttpRequest()
     const baseUrl = "http://127.0.0.1:8000"
     const grn = createGrn()
 
     const url = baseUrl + "/positions/" + grn
 
-    http.open("GET", url)
-    http.send()
-
-    http.onload = () => console.log(http.responseText)
+    fetch(url, {
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+        }
+    }
+    )
+    .then((response) => response.json())
+    .then((data) => console.log(data));
 }
 
 function pieceClick(target, quad, row, col) {

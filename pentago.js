@@ -80,7 +80,7 @@ function rotateQuad(quad, direction) {
             }
         }
     }
-    
+
     for (var a = 0; a < gameBoard[quad].length; a++) {
         gameBoard[quad][a] = outputArray[a].slice();
     }
@@ -97,25 +97,70 @@ function rotateQuad(quad, direction) {
     checkPhase();
 }
 
-function checkPhase() {
-    function flattenBoard() {
-        var flat = [];
-        var next;
-        for (var quad = 0; quad < 3; quad += 2) {
-            for (var row = 0; row < 3; row++) {
-                for (col = 0; col < 6; col++) {
-                    if (col < 3) {
-                        next = gameBoard[quad][row][col];
-                    } else {
-                        next = gameBoard[quad+1][row][col-3];
-                    }
-                    flat.push(next);
+function flattenBoard() {
+    var flat = [];
+    var next;
+    for (var quad = 0; quad < 3; quad += 2) {
+        for (var row = 0; row < 3; row++) {
+            for (col = 0; col < 6; col++) {
+                if (col < 3) {
+                    next = gameBoard[quad][row][col];
+                } else {
+                    next = gameBoard[quad+1][row][col-3];
                 }
+                flat.push(next);
             }
         }
-        return flat;
+    }
+    return flat;
+}
+
+
+function createGrn() {
+    function emptyCountString(emptyCount) {
+        var ecs = ""
+
+        if (emptyCount % 6 != 0) {
+            ecs += (emptyCount % 6).toString()
+        }
+
+        const fullRows = Math.floor(emptyCount / 6)
+
+        for (var i = 0; i < fullRows; i++) {
+            ecs += "6"
+        }
+
+        return ecs
     }
 
+    const flat = flattenBoard()
+    var grn = ""
+
+    var emptyCount = 0
+
+    for (var i = 0; i < 36; i++) {
+        if (flat[i] == 0) {
+            emptyCount++
+        } else {
+            grn += emptyCountString(emptyCount)
+            emptyCount = 0
+
+            if (flat[i] == 1) {
+                grn += "w"
+            } else {
+                grn += "b"
+            }
+        }
+    }
+
+    if (emptyCount != 0) {
+        grn += emptyCountString(emptyCount)
+    }
+
+    return grn
+}
+
+function checkPhase() {
     var inspectionBoard = flattenBoard();
 
     function victoryCheck(startIncr, checkIncr, winCombos, shelf) {
@@ -167,6 +212,19 @@ function turnPhase() {
     }
 }
 
+function getEngineMove() {
+    const http = new XMLHttpRequest()
+    const baseUrl = "http://127.0.0.1:8000"
+    const grn = createGrn()
+
+    const url = baseUrl + "/positions/" + grn
+
+    http.open("GET", url)
+    http.send()
+
+    http.onload = () => console.log(http.responseText)
+}
+
 function pieceClick(target, quad, row, col) {
     if (gameBoard[quad][row][col] == 0 && rotateTurn === false && gameOver === false) {
         if (whiteTurn) {
@@ -175,6 +233,7 @@ function pieceClick(target, quad, row, col) {
             popwhite.play();
             refreshBoard();
         } else {
+            getEngineMove()
             gameBoard[quad][row][col] = -1;
             var popblack = new Audio('sound/pop_black.wav');
             popblack.play();
@@ -232,7 +291,7 @@ document.addEventListener("mousemove", function(ev) {
             startDegree -= Math.atan2( startMouseCoords.y - boxCenter.y, startMouseCoords.x - boxCenter.x );
             finalDegree = (startDegree * (360 / (2 * Math.PI)));
         }
-        
+
         if (finalDegree > 90 && finalDegree < 180) {
             finalDegree = 0;
             endingSnap(1);
@@ -241,7 +300,7 @@ document.addEventListener("mousemove", function(ev) {
             finalDegree = 0;
             endingSnap(0);
         }
-        
+
         if (finalDegree < -90 && finalDegree > -180) {
             finalDegree = 0;
             endingSnap(0);
@@ -258,7 +317,7 @@ document.addEventListener("mousemove", function(ev) {
 document.addEventListener("mouseup", function() {
     if (dragging) {
         dragging = false;
-        box.style.transform = "rotate(0deg)"; 
+        box.style.transform = "rotate(0deg)";
     }
 });
 

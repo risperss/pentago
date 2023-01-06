@@ -33,6 +33,7 @@ var cpuDirection;
 var whiteTurn = true;
 var rotateTurn = false;
 var gameOver = false;
+var awaitingComputerMove = false;
 
 // rotation variables
 var dragging = false;
@@ -310,6 +311,7 @@ function parseEngineMove(move) {
 async function computerTurn() {
     var engineMove = await getEngineResponse()
     move = parseEngineMove(engineMove.move)
+    awaitingComputerMove = false
 
     pieceClick(null, move.moveQuad, move.row, move.col)
     quad(move.rotateQuad, move.direction)
@@ -322,12 +324,13 @@ async function turnPhase() {
         changeColor("black");
     } else {
         changeColor("white");
+        awaitingComputerMove = true
         await computerTurn()
     }
 }
 
 async function pieceClick(target, quad, row, col) {
-    if (gameBoard[quad][row][col] == 0 && rotateTurn === false && gameOver === false) {
+    if (gameBoard[quad][row][col] == 0 && rotateTurn === false && gameOver === false && awaitingComputerMove === false) {
         if (whiteTurn) {
             gameBoard[quad][row][col] = 1;
             var popwhite = new Audio('sound/pop_white.wav');
@@ -349,7 +352,7 @@ async function pieceClick(target, quad, row, col) {
 function addQuadClickListener(list) {
     for (var i = 0; i < list.length; i++) {
         list[i].addEventListener("mousedown", function(ev) {
-            if (rotateTurn === true && gameOver === false) {
+            if (rotateTurn === true && gameOver === false && awaitingComputerMove === false) {
                 dragging = true;
                 if (ev.preventDefault) { // prevent firefox image dragging
                     ev.preventDefault();

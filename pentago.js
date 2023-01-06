@@ -23,6 +23,12 @@ function populateBoard() {
 
 var gameBoard = populateBoard();
 
+// cpu turn variables
+var cpuQuad;
+var cpuRow;
+var cpuCol;
+var cpuDirection;
+
 // turn variables
 var whiteTurn = true;
 var rotateTurn = false;
@@ -57,7 +63,7 @@ function refreshBoard() {
     }
 }
 
-function rotateQuad(quad, direction) {
+function quad(quad, direction) {
     // direction is Boolean: 0 is counter-clockwise, 1 is clockwise
 
     if (rotateTurn === false) {
@@ -221,35 +227,106 @@ function checkPhase() {
     }
 }
 
-function turnPhase() {
+async function getEngineResponse() {
+    const baseUrl = "http://127.0.0.1:8000"
+    const grn = createGrn()
+    const url = baseUrl + "/positions/" + grn
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log(data)
+
+        return data;
+    } catch (error) {
+        return error;
+    }
+}
+
+function parseEngineMove(move) {
+    /*
+        MOVES (Same pattern as chess)
+        a1-1L
+
+        QUADS   CPP QUADS
+        0 1     3 4
+        2 3     1 2
+
+        WITHIN QUAD
+        (0, 0) (0, 1), (0, 2)
+        (1, 0) (1, 1), (1, 2)
+        (2, 0) (2, 1), (2, 2)
+    */
+    const cols = "abcdef"
+
+    const col = cols.indexOf(move[0]) % 3
+    const row = (6 - parseInt(move[1])) % 3
+    const cppQuad = move[3]
+    var rotateQuad
+    var moveQuad
+
+    if (cppQuad == '1') {
+        rotateQuad = 2
+    } else if (cppQuad == '2') {
+        rotateQuad = 3
+    } else if (cppQuad == '3') {
+        rotateQuad = 0
+    } else {
+        rotateQuad = 1
+    }
+
+    const cppColIndex = cols.indexOf(move[0])
+    const cppRowIndex = parseInt(move[1]) - 1
+
+    if (cppRowIndex >= 3 && cppColIndex < 3) {
+        moveQuad = 0
+    } else if (cppRowIndex >= 3 && cppColIndex >= 3) {
+        moveQuad = 1
+    } else if (cppColIndex < 3) {
+        moveQuad = 2
+    } else {
+        moveQuad = 3
+    }
+
+    var direction
+
+    if (move[4] == 'R') {
+        direction = 1
+    } else {
+        direction = 0
+    }
+
+    result = {
+        "row": row,
+        "col": col,
+        "moveQuad": moveQuad,
+        "rotateQuad": rotateQuad,
+        "direction": direction,
+    }
+
+    return result
+}
+
+async function computerTurn() {
+    var engineMove = await getEngineResponse()
+    move = parseEngineMove(engineMove.move)
+
+    pieceClick(null, move.moveQuad, move.row, move.col)
+    quad(move.rotateQuad, move.direction)
+}
+
+async function turnPhase() {
     whiteTurn = !whiteTurn;
     rotateTurn = false;
     if (whiteTurn) {
         changeColor("black");
     } else {
         changeColor("white");
+        await computerTurn()
     }
 }
 
-function getEngineMove() {
-    const baseUrl = "http://127.0.0.1:8000"
-    const grn = createGrn()
-
-    const url = baseUrl + "/positions/" + grn
-
-    fetch(url, {
-        headers: {
-            "Access-Control-Allow-Origin": "*",
-        }
-    }
-    )
-    .then((response) => response.json())
-    .then((data) => console.log(data));
-
-    console.log(grn)
-}
-
-function pieceClick(target, quad, row, col) {
+async function pieceClick(target, quad, row, col) {
     if (gameBoard[quad][row][col] == 0 && rotateTurn === false && gameOver === false) {
         if (whiteTurn) {
             gameBoard[quad][row][col] = 1;
@@ -257,13 +334,15 @@ function pieceClick(target, quad, row, col) {
             popwhite.play();
             refreshBoard();
         } else {
-            getEngineMove()
             gameBoard[quad][row][col] = -1;
             var popblack = new Audio('sound/pop_black.wav');
             popblack.play();
             refreshBoard();
         }
-    checkPhase();
+    // The engine only checks for a win after the move and spin
+    // Even though it is wrong as per the pentago rules, I will remove this line
+    // checkPhase();
+    rotateTurn = true
     }
 }
 
@@ -348,7 +427,7 @@ document.addEventListener("mouseup", function() {
 function endingSnap(rotateDirection) {
     dragging = false;
     var targetQuad = parseInt(box.id.slice(-1));
-    rotateQuad(targetQuad,rotateDirection);
+    quad(targetQuad,rotateDirection);
 }
 
 function victoryScreen(lastCheck) {

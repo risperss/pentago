@@ -228,7 +228,7 @@ function checkPhase() {
 }
 
 async function getEngineResponse() {
-    const baseUrl = "http://127.0.0.1:8000"
+    const baseUrl = "http:/3.14.135.37"
     const grn = createGrn()
     const url = baseUrl + "/positions/" + grn
 
@@ -320,6 +320,7 @@ async function turnPhase() {
     rotateTurn = false;
     if (whiteTurn) {
         changeColor("black");
+        await computerTurn()
     } else {
         changeColor("white");
         await computerTurn()

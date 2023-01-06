@@ -228,7 +228,7 @@ function checkPhase() {
 }
 
 async function getEngineResponse() {
-    const baseUrl = "https://www.pengine.link"
+    const baseUrl = "https://www.pengine.live"
     const grn = createGrn()
     const url = baseUrl + "/positions/" + grn
 

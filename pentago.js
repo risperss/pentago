@@ -35,6 +35,11 @@ var rotateTurn = false;
 var gameOver = false;
 var awaitingComputerMove = false;
 
+// victory variables
+var blackWon = false
+var whiteWon = false
+var draw = false
+
 // rotation variables
 var dragging = false;
 var currentQuad;
@@ -188,6 +193,7 @@ function createGrn() {
 
 function checkPhase() {
     var inspectionBoard = flattenBoard();
+    var full = true
 
     function victoryCheck(startIncr, checkIncr, winCombos, shelf) {
         var searchPoint;
@@ -202,24 +208,40 @@ function checkPhase() {
             for (var n = 0; n < 5; n++) {
                 searchPoint = startPoint + (n * checkIncr);
                 if (inspectionBoard[searchPoint] == 0) {
+                    full = false
                     break;
                 }
                 if (lastCheck != 0 && lastCheck != inspectionBoard[searchPoint]) {
                     break;
                 }
                 if (n === 4) {
-                    victoryScreen(lastCheck);
+                    if (lastCheck <= -1) {
+                        blackWon = true
+                    } else if (lastCheck >= 1) {
+                        whiteWon= true
+                    }
                 }
                 lastCheck = inspectionBoard[searchPoint];
             }
             startPoint += startIncr;
         }
+
     }
 
     victoryCheck(6, 1, 12, 1); // horizontal
     victoryCheck(1, 6, 12, 6); // vertical
     victoryCheck(1, 7, 4, 6); // diagonal from left
     victoryCheck(1, 5, 4, 6); // diagonal from right
+
+    if (blackWon === true && whiteWon === true) {
+        draw = true
+        victoryScreen();
+    } else if (blackWon === true || whiteWon === true) {
+        victoryScreen();
+    } else if (full === true) {
+        draw = true
+        victoryScreen();
+    }
 
     if (rotateTurn && !gameOver) {
         turnPhase();
@@ -324,8 +346,8 @@ async function turnPhase() {
         changeColor("black");
     } else {
         changeColor("white");
-        awaitingComputerMove = true
-        await computerTurn()
+        // awaitingComputerMove = true
+        // await computerTurn()
     }
 }
 
@@ -433,31 +455,44 @@ function endingSnap(rotateDirection) {
     quad(targetQuad,rotateDirection);
 }
 
-function victoryScreen(lastCheck) {
+function victoryScreen() {
     gameOver = true;
     alert = document.getElementById("alert");
     alert.style.visibility = "visible";
-    if (lastCheck >= 1) {
+    if (draw) {
+        changeColor("gray");
+        alert.innerHTML = "Draw!";
+    } else if (whiteWon) {
         changeColor("black");
         alert.innerHTML = "White victory!";
-    } else if (lastCheck <= -1) {
+
+        var victory = new Audio('sound/victory.wav');
+        victory.play();
+    } else if (blackWon) {
         changeColor("white");
         alert.innerHTML = "Black victory!";
+
+        var victory = new Audio('sound/victory.wav');
+        victory.play();
     }
-    var victory = new Audio('sound/victory.wav');
-    victory.play();
 }
 
 function changeColor(color) {
     // argument color is color of text
     wordsList = document.getElementsByClassName("words");
     for (var i = 0; i < wordsList.length; i++) {
-        wordsList[i].style.color = color;
+        if (color === "gray") {
+            wordsList[i].style.color = "black";
+        } else {
+            wordsList[i].style.color = color;
+        }
     }
     if (color === "white") {
         document.body.style.background = "black";
     } else if (color === "black") {
         document.body.style.background = "white";
+    } else if (color === "gray") {
+        document.body.style.background = "gray";
     }
 }
 

@@ -228,7 +228,7 @@ function checkPhase() {
 }
 
 async function getEngineResponse() {
-    const baseUrl = "http:/3.14.135.37"
+    const baseUrl = "https://www.pengine.link"
     const grn = createGrn()
     const url = baseUrl + "/positions/" + grn
 
@@ -320,7 +320,6 @@ async function turnPhase() {
     rotateTurn = false;
     if (whiteTurn) {
         changeColor("black");
-        await computerTurn()
     } else {
         changeColor("white");
         await computerTurn()

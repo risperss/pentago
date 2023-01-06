@@ -346,8 +346,8 @@ async function turnPhase() {
         changeColor("black");
     } else {
         changeColor("white");
-        // awaitingComputerMove = true
-        // await computerTurn()
+        awaitingComputerMove = true
+        await computerTurn()
     }
 }
 

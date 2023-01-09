@@ -336,6 +336,7 @@ async function computerTurn() {
     awaitingComputerMove = false
 
     pieceClick(null, move.moveQuad, move.row, move.col)
+    await new Promise(r => setTimeout(r, 1000));
     quad(move.rotateQuad, move.direction)
 }
 
